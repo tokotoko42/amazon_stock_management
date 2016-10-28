@@ -1,0 +1,1 @@
+a:1:{s:5:"dummy";s:98:"/usr/local/apache/vhosts/data.apache.test.com/htdocs/work2/protected/extensions/Dwoo/plugins/dummy";}
