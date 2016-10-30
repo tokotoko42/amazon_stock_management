@@ -689,8 +689,6 @@ class CWebApplication extends CApplication
 		if (strlen($request_id) === 0) {
 			$request_id = '-';
 		}
-		LogUtil::setLog($api_token, "ComException", "error", $request_id,
-                        __CLASS__, __FUNCTION__, __LINE__, $str);
 		$this->raiseEvent('onException', $event);
 	}
 
@@ -722,8 +720,6 @@ class CWebApplication extends CApplication
 		if (strlen($request_id) === 0) {
 			$request_id = '-';
 		}
-		LogUtil::setLog($api_token, "ComError", "error", $request_id,
-                        __CLASS__, __FUNCTION__, __LINE__, $str);
 		$this->raiseEvent('onError', $event);
 	}
 }

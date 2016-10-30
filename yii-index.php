@@ -1,5 +1,4 @@
 <?php
-
 error_reporting(E_ALL|E_STRICT);
 // detect environment
 $yii = 'protected/yii/framework/yii.php';

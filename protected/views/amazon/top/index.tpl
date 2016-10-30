@@ -1,6 +1,6 @@
     <div class="container">
 
-      <form name="input" action="csv_down.html" method="get">
+      <form name="input" action="download" method="post">
       
       URLを入力してください <br>
       <input type="text" name="url" value="" size="100">

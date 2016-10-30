@@ -3,10 +3,19 @@
 Yii::import('application.const.*');
 class LogUtil
 {
-    public static function setLog($log_id, $log_level, $req_id, $cls, $fnc, $line, $message)
+    public  $request_id = '';
+    public function init()
+    {
+        // 定数ファイル
+        Yii::import('application.const.*');
+        // ログ出力用 リクエスト固有ID生成
+        $this->request_id = md5(time(). rand(0, 10000));
+    }
+    
+    public function setLog($log_id, $log_level, $cls, $fnc, $line, $message)
     {
         $log = array();
-        $log[] = $req_id;
+        $log[] = $this->request_id;
         $log[] = $log_id;
         $log[] = $cls;
         $log[] = $fnc;
