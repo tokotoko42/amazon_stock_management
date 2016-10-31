@@ -28,10 +28,22 @@ class DownloadController extends PCController
         $this->logutil->init();
 
         // Request amazon page
-        $this->url = $this->getURL($_POST);
+        $this->url = $this->getUrl();
         $html = $this->requestAmazon();
         
         // Get page count
+        $page = $this->getPageCount($html);
+        echo $page;
+        $html->clear();
+//        echo $page;
+
+        /*
+        for ($count = 2; $count <= $page; $count++) {
+            $this->url = $this->getUrlNext($count);
+            //echo $this->url . '<br>';
+        }
+
+        // Create CSV
         foreach($html->find("li") as $parts) {
             // Asinコード抽出
             foreach($parts->find("span") as $element1) {
@@ -51,11 +63,10 @@ class DownloadController extends PCController
             }
             
             if (isset($parts->id) && isset($asin) && isset($item_name)) {
-                echo $parts->id . ' : ' . $asin . ' : ' . $item_name . ' : ' . $item_url . '<br>';
+                echo $parts->id . ' : ' . $asin . ' : ' . $item_name . '<br>';
             }
         }
-        // Create CSV
-        
+*/        
         // Get next page
         
         // Update CSV
@@ -63,8 +74,22 @@ class DownloadController extends PCController
         // Save csv file
     }
     
-    private function getURL() {
+    private function getUrl() {
         return $_POST['url'];
+    }
+
+    private function getUrlNext($count) {
+        return $this->url . '&page=' . $count;
+    }
+    
+    private function getPageCount($html) {
+        foreach($html->find('div') as $parts) {
+            foreach($parts->find("span") as $element) {
+                if ($element->class === "pagnDisabled") {
+                    return $element;
+                }
+            }
+        }
     }
     
     /**
