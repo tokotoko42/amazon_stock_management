@@ -10,7 +10,7 @@
  */
 class TopController extends PCController
 {
-    private $log_id = "TOP";
+    private $log_id = "AMAZON-STOCK";
     private $logutil;
 
     /**

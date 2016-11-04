@@ -11,67 +11,52 @@ require_once 'simple_html_dom.php';
  * @version 0.0.1
  * $Id$ 
  */
-class DownloadController extends PCController
-{
+class DownloadController extends PCController {
     private $ch;
     private $url;
-    private $log_id = "CSVDOWN";
+    private $log_id = "AMAZON-STOCK";
     private $logutil;
+
+    private $item;
+    private $item_name;
+    private $item_url;
+    private $sold_out;
+    private $asin;
+    private $id;
     
     /**
      * Download operation
      */
-    public function actionIndex()
-    {
+    public function actionIndex() {
+        // Common process
         $this->setPageTitle('Amazon Stock Management');
         $this->logutil = new LogUtil;
         $this->logutil->init();
 
+        $msg = "CSVファイル作成処理を開始します";
+        $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
+
         // Request amazon page
         $this->url = $this->getUrl();
         $html = $this->requestAmazon();
+
+        $msg = "アマゾンからレスポンスが返却されました";
+        $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
         
         // Get page count
         $page = $this->getPageCount($html);
-        echo $page;
+
+        $msg = "ページ数は" . $page . "です";
+        $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
+
+        // Get response information
+        $result_info = $this->extractResponse($html);
+
+        $msg = "初回ページのスクレイピングが完了しました";
+        $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
+
+        // Response clear
         $html->clear();
-//        echo $page;
-
-        /*
-        for ($count = 2; $count <= $page; $count++) {
-            $this->url = $this->getUrlNext($count);
-            //echo $this->url . '<br>';
-        }
-
-        // Create CSV
-        foreach($html->find("li") as $parts) {
-            // Asinコード抽出
-            foreach($parts->find("span") as $element1) {
-                if (isset($element1->name)) {
-                    $asin = $element1->name;
-                }
-            }
-
-            // 商品タイトル抽出
-            foreach($parts->find("a") as $element2) {
-                if (isset($element2->title)) {
-                    $item_name = $element2->title;
-                }
-                if (isset($element2->href)) {
-                    $item_url = $element2->href;
-                }
-            }
-            
-            if (isset($parts->id) && isset($asin) && isset($item_name)) {
-                echo $parts->id . ' : ' . $asin . ' : ' . $item_name . '<br>';
-            }
-        }
-*/        
-        // Get next page
-        
-        // Update CSV
-        
-        // Save csv file
     }
     
     private function getUrl() {
@@ -81,17 +66,7 @@ class DownloadController extends PCController
     private function getUrlNext($count) {
         return $this->url . '&page=' . $count;
     }
-    
-    private function getPageCount($html) {
-        foreach($html->find('div') as $parts) {
-            foreach($parts->find("span") as $element) {
-                if ($element->class === "pagnDisabled") {
-                    return $element;
-                }
-            }
-        }
-    }
-    
+
     /**
      * リクエスト送信用コンポーネント
      * @param 
@@ -101,7 +76,27 @@ class DownloadController extends PCController
         $ret = curl_exec($this->ch);
         return $ret;
     }
-    
+
+    /**
+     * ページ数を取得
+     * @param Response結果
+     * @return ページ数
+     */
+    private function getPageCount($html) {
+        foreach($html->find('div') as $parts) {
+            foreach($parts->find("span") as $element) {
+                if ($element->class === "pagnDisabled") {
+                    return $element;
+                }
+            }
+        }
+    }
+
+    /**
+     * アマゾンへリクエストを送信する
+     * @param 
+     * @return Response結果
+     */
     private function requestAmazon() {
         // ログインリクエストを送信
         $this->ch = curl_init();
@@ -115,5 +110,111 @@ class DownloadController extends PCController
         $this->logutil->setLog($this->log_id, 'info', __CLASS__, __FUNCTION__, __LINE__, $msg);
 
         return str_get_html($this->exec());
+    }
+
+    /**
+     * レスポンスのスクレイピング
+     * @param レスポンス結果
+     * @return スクレイピング解析判定
+     */
+    private function extractResponse($html) {
+        // １商品の大枠が<li>タグで構成されている
+        foreach($html->find("li") as $parts) {
+            // 在庫抽出
+            $this->extractStock($parts);
+
+            // 商品名および商品URL抽出
+            if (!$this->extractItemInfo($parts)) {
+                continue;
+            }
+            
+            // ASINおよび商品型番抽出
+            if (!$this->extractAsinAndItem($parts)) {
+                continue;
+            }
+        }
+    }
+
+    /**
+     * 在庫抽出
+     * @param 商品用スクレイピング結果
+     * @return 
+     */
+    private function extractStock($parts) {
+        foreach($parts->find("span") as $element) {
+            if ($element1->class === "a-size-small a-color-secondary") {
+                // 在庫切れ文字が含まれている場合、必ずUTF-8となる
+                if (mb_detect_encoding($element) === "UTF-8") {
+                    $pattern = "/在庫切れ/";
+                    $pattern = mb_convert_encoding($pattern, "UTF-8", "auto");
+
+                    //「在庫切れ」文字が含まれているか、判定
+                    // 商品在庫切れ  ->  1
+                    // 商品在庫あり  ->  0
+                    if (preg_match($pattern, $element)) {
+                        $this->sold_out = 1;
+                    } else {
+                        $this->sold_out = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 商品名および商品URL抽出
+     * @param 商品用スクレイピング結果
+     * @return bool
+     */
+    private function extractItemInfo($parts) {
+        foreach($parts->find("a") as $element) {
+            if (isset($element->title)) {
+                $this->item_name = $element->title;
+            }
+            if (isset($element->href)) {
+                $this->item_url = $element->href;
+            }
+        }
+
+        // 商品URLが含まれていない場合、スキップ
+        if (!preg_match("/^https/", $this->item_url)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * ASINおよび商品型番抽出
+     * @param 商品用スクレイピング結果
+     * @return bool
+     */
+    private function extractAsinAndItem($parts) {
+        if (isset($parts->id) && isset($this->item_name)) {
+            // idの抽出
+            $this->id = $parts->id;
+
+            // ASINの抽出
+            $asin_tmp = explode("\"", $parts);
+            $this->asin = $asin_tmp[3];
+
+            // 商品の型番を抽出する
+            $items = explode("-", $this->item_name);
+            // ハイフン(-)が存在しない商品名は型番がないものとみなす
+            if (count($items) > 1) {
+                // 型番を抽出する
+                $item_type1_tmp = explode(" ", $items[0]);
+                $item_type1 = end($item_type1_tmp);
+                $item_type2_tmp = explode(" ", $items[1]);
+                $item_type2 = $item_type2_tmp[0];
+                $item_tmp = $item_type1 . '-' . $item_type2;
+                // 日本語を削除する
+                $this->item = preg_replace("/&#\d+;/", "", $item_tmp);
+            }
+
+        // id, 商品名が取れていなかったらスキップ
+        } else {
+            return false;
+        }
+        return true;
     }
 }
