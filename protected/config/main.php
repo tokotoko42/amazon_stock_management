@@ -33,11 +33,6 @@ return array(
             ),
             'showScriptName' => false,
         ),
-        'crypt'=>array(
-            'class'=>'CSecurityManager',
-            'cryptAlgorithm'=>'rijndael-256',
-            'encryptionKey'=>'123ijikosoak)nIueopaaq7crftylgkig',
-        ),
         'log'=>array(
             'class'=>'CLogRouter',
             'routes'=>array(
