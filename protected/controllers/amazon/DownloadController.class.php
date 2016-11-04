@@ -1,5 +1,7 @@
 <?php
 Yii::import('application.vendors.*');
+mb_language("ja");
+mb_internal_encoding('UTF-8'); 
 require_once 'simple_html_dom.php';
 
 /*
@@ -8,7 +10,7 @@ require_once 'simple_html_dom.php';
  * @package Amazon stock management
  * @subpackage - 
  * @author Kamijo Tetsuya
- * @version 0.0.1
+ * @version 0.1.1
  * $Id$ 
  */
 class DownloadController extends PCController {
@@ -16,6 +18,7 @@ class DownloadController extends PCController {
     private $url;
     private $log_id = "AMAZON-STOCK";
     private $logutil;
+    private $fp;
 
     private $item;
     private $item_name;
@@ -24,25 +27,30 @@ class DownloadController extends PCController {
     private $asin;
     private $id;
     
-    /**
-     * Download operation
-     */
-    public function actionIndex() {
-        // Common process
+    private function initProcess() {
         $this->setPageTitle('Amazon Stock Management');
         $this->logutil = new LogUtil;
         $this->logutil->init();
 
+        $csv_file = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
+        $this->fp = fopen($csv_file, "w");
+
+        // ヘッダーを定義
+        fwrite($this->fp, "ID,ASIN,ITEM_TYPE.STOCK,ITEM_URL");
+    }
+
+    /**
+     * Download operation
+     */
+    public function actionIndex() {
+        $this->initProcess();
         $msg = "CSVファイル作成処理を開始します";
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
 
         // Request amazon page
         $this->url = $this->getUrl();
-        $html = $this->requestAmazon();
+        $html = $this->requestAmazon($this->url);
 
-        $msg = "アマゾンからレスポンスが返却されました";
-        $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
-        
         // Get page count
         $page = $this->getPageCount($html);
 
@@ -50,14 +58,44 @@ class DownloadController extends PCController {
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
 
         // Get response information
-        $result_info = $this->extractResponse($html);
+        $this->extractResponse($html);
 
         $msg = "初回ページのスクレイピングが完了しました";
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
 
-        // Response clear
+        // Process clear
         $html->clear();
+        curl_close($this->ch);
+
+        // 次ページを解析する
+        if ($page > 1) {
+            for ($count = 2; $count <= $page; $count++) {
+                // アマゾンのアクセス制御対策のため、数秒間待機
+                sleep(rand(1,9));
+
+                // 次ページのURLを取得
+                $url2 = getUrlNext($this->url, $count);
+
+                // Request amazon page
+                $html = $this->requestAmazon($url2);
+
+                // Get response information
+                $this->extractResponse($html);
+
+                // Process clear
+                $html->clear();
+                curl_close($this->ch);
+            }
+        }
+
+        fclose($this->fp);
     }
+
+    private function writeRecord() {
+        $resord = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
+        fwrite($this->fp, $record);
+    }
+
     
     private function getUrl() {
         return $_POST['url'];
@@ -94,19 +132,19 @@ class DownloadController extends PCController {
 
     /**
      * アマゾンへリクエストを送信する
-     * @param 
+     * @param URL
      * @return Response結果
      */
-    private function requestAmazon() {
+    private function requestAmazon($url) {
         // ログインリクエストを送信
         $this->ch = curl_init();
         curl_setopt_array($this->ch, array(
-            CURLOPT_URL => $this->url,
+            CURLOPT_URL => $url,
             CURLOPT_USERAGENT => Yii::app()->params['user_agent'],
             CURLOPT_RETURNTRANSFER => true,
         ));
      
-        $msg = 'アマゾンにリクエストを送信しました。URL = ' . $this->url;
+        $msg = 'アマゾンにリクエストを送信しました。URL = ' . $url;
         $this->logutil->setLog($this->log_id, 'info', __CLASS__, __FUNCTION__, __LINE__, $msg);
 
         return str_get_html($this->exec());
@@ -132,6 +170,9 @@ class DownloadController extends PCController {
             if (!$this->extractAsinAndItem($parts)) {
                 continue;
             }
+
+            // Create CSV file
+            $this->writeRecord();
         }
     }
 
