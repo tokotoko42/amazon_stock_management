@@ -17,7 +17,7 @@ return array(
                 array(
                     'class'=>'RFileLogRoute',
                     'levels'=>'error, warning, profile, info, trace',
-                    'logPath'=>'/usr/local/var/log/airregi/',
+                    'logPath'=>'/tmp/',
                     'logFile'=>'batch',
                 ),
             ),

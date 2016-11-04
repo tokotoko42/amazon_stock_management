@@ -8,7 +8,7 @@ class AmazonStockManagementCommand extends BatchBase
 {
     private $ch;
     private $url;
-    private $log_id = "AMAZON-STOCK";
+    public $log_id = "AMAZON-STOCK";
     private $logutil;
     private $fp;
 
@@ -20,7 +20,6 @@ class AmazonStockManagementCommand extends BatchBase
     private $id;
 
     private function initProcess() {
-        $this->setPageTitle('Amazon Stock Management');
         $this->logutil = new LogUtil;
         $this->logutil->init();
 
@@ -37,7 +36,7 @@ class AmazonStockManagementCommand extends BatchBase
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
 
         // Request amazon page
-        $this->url = $this->getUrl();
+        $this->url = Yii::app()->params['url'];
         $html = $this->requestAmazon($this->url);
 
         // Get page count
@@ -63,7 +62,7 @@ class AmazonStockManagementCommand extends BatchBase
                 sleep(rand(1,9));
 
                 // 次ページのURLを取得
-                $url2 = getUrlNext($this->url, $count);
+                $url2 = $this->getUrlNext($this->url, $count);
 
                 // Request amazon page
                 $html = $this->requestAmazon($url2);
@@ -81,13 +80,8 @@ class AmazonStockManagementCommand extends BatchBase
     }
 
     private function writeRecord() {
-        $resord = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
+        $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
         fwrite($this->fp, $record);
-    }
-
-    
-    private function getUrl() {
-        return $_POST['url'];
     }
 
     private function getUrlNext($count) {
@@ -113,7 +107,7 @@ class AmazonStockManagementCommand extends BatchBase
         foreach($html->find('div') as $parts) {
             foreach($parts->find("span") as $element) {
                 if ($element->class === "pagnDisabled") {
-                    return $element;
+                    return preg_replace('/[^0-9]/', '', $element);
                 }
             }
         }
@@ -172,7 +166,7 @@ class AmazonStockManagementCommand extends BatchBase
      */
     private function extractStock($parts) {
         foreach($parts->find("span") as $element) {
-            if ($element1->class === "a-size-small a-color-secondary") {
+            if ($element->class === "a-size-small a-color-secondary") {
                 // 在庫切れ文字が含まれている場合、必ずUTF-8となる
                 if (mb_detect_encoding($element) === "UTF-8") {
                     $pattern = "/在庫切れ/";

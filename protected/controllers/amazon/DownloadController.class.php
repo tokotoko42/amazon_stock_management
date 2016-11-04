@@ -74,7 +74,7 @@ class DownloadController extends PCController {
                 sleep(rand(1,9));
 
                 // 次ページのURLを取得
-                $url2 = getUrlNext($this->url, $count);
+                $url2 = $this->getUrlNext($this->url, $count);
 
                 // Request amazon page
                 $html = $this->requestAmazon($url2);
@@ -92,7 +92,7 @@ class DownloadController extends PCController {
     }
 
     private function writeRecord() {
-        $resord = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
+        $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
         fwrite($this->fp, $record);
     }
 
@@ -124,7 +124,7 @@ class DownloadController extends PCController {
         foreach($html->find('div') as $parts) {
             foreach($parts->find("span") as $element) {
                 if ($element->class === "pagnDisabled") {
-                    return $element;
+                    return preg_replace('/[^0-9]/', '', $element);
                 }
             }
         }
@@ -183,7 +183,7 @@ class DownloadController extends PCController {
      */
     private function extractStock($parts) {
         foreach($parts->find("span") as $element) {
-            if ($element1->class === "a-size-small a-color-secondary") {
+            if ($element->class === "a-size-small a-color-secondary") {
                 // 在庫切れ文字が含まれている場合、必ずUTF-8となる
                 if (mb_detect_encoding($element) === "UTF-8") {
                     $pattern = "/在庫切れ/";
