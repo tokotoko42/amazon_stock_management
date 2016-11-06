@@ -43,6 +43,12 @@ class DownloadController extends PCController {
      * Download operation
      */
     public function actionIndex() {
+        // Validation check
+        if (!$this->validationURL()) {            
+            $this->template = 'error';
+            return;
+        }
+
         $this->initProcess();
         $msg = "CSVファイル作成処理を開始します";
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
@@ -53,7 +59,6 @@ class DownloadController extends PCController {
 
         // Get page count
         $page = $this->getPageCount($html);
-
         $msg = "ページ数は" . $page . "です";
         $this->logutil->setLog($this->log_id, "info", __CLASS__, __FUNCTION__, __LINE__, $msg);
 
@@ -66,7 +71,7 @@ class DownloadController extends PCController {
         // Process clear
         $html->clear();
         curl_close($this->ch);
-
+/*
         // 次ページを解析する
         if ($page > 1) {
             for ($count = 2; $count <= $page; $count++) {
@@ -87,10 +92,18 @@ class DownloadController extends PCController {
                 curl_close($this->ch);
             }
         }
-
+*/
+        $this->stash['csv_file'] = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
         fclose($this->fp);
     }
 
+    private function validationURL() {
+        if (!preg_match("/^https/", $_POST['url'])) {
+            return false;
+        }
+        return true;
+    }
+    
     private function writeRecord() {
         $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->sold_out . ',' . $this->item_url . "\n";
         fwrite($this->fp, $record);
