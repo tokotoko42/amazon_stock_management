@@ -1,6 +1,6 @@
 <div class="container">
 
     CSVフィルを作成しました。こちらからダウンロードしてください。
-    <a href="./test.csv" download="csvsample.csv">CSVファイル</a>
+    <a href="/work2/{{$csv_file}}" download="csvsample.csv">CSVファイル</a>
 
 </div> <!-- /container -->

@@ -36,21 +36,22 @@ body {
 -->
 </style>
 
-<div class="container">
+<div class="error_out">
+<div class="error_left">Error!</div>
+<div class="error_right">
+  <strong>エラーが発生しました!</strong><br />
+  URLはhttpsを使用してください<br />
+  <div class="home"></div>
+</div>
+<br style="clear:both">
+</div>
 
+<div class="container">    
       <form name="input" action="download" method="post">
-      エラーが発生しました。
+      <br>
       URLを入力してください <br>
       <input type="text" name="url" value="" size="100">
       <br>
       <input type="submit" value="submit">
-<div class="error_out">
-<div class="error_left">404 Error!</div>
-<div class="error_right"><strong>File not found!</strong><br />
-  ページが見つかりません。<br />
-<div class="home">>> <a href="#">ホーム</a></div></div>
-<br style="clear:both">
-</div>
       </form>
-
-    </div> <!-- /container -->
+</div> <!-- /container -->

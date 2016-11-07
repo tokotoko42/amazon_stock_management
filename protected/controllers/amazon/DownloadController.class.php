@@ -26,14 +26,18 @@ class DownloadController extends PCController {
     private $sold_out;
     private $asin;
     private $id;
+    private $csv_file;
     
     private function initProcess() {
         $this->setPageTitle('Amazon Stock Management');
         $this->logutil = new LogUtil;
         $this->logutil->init();
 
-        $csv_file = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
-        $this->fp = fopen($csv_file, "w");
+        $this->csv_file = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
+        
+        // Rename
+        $this->csv_file = preg_replace('/YYYYMMDDHHMMII/', date("YmdHis"), $this->csv_file);
+        $this->fp = fopen($this->csv_file, "w");
 
         // ヘッダーを定義
         fwrite($this->fp, "ID,ASIN,ITEM_TYPE.STOCK,ITEM_URL");
@@ -71,7 +75,7 @@ class DownloadController extends PCController {
         // Process clear
         $html->clear();
         curl_close($this->ch);
-/*
+
         // 次ページを解析する
         if ($page > 1) {
             for ($count = 2; $count <= $page; $count++) {
@@ -92,8 +96,8 @@ class DownloadController extends PCController {
                 curl_close($this->ch);
             }
         }
-*/
-        $this->stash['csv_file'] = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
+
+        $this->stash['csv_file'] = $this->csv_file;
         fclose($this->fp);
     }
 
