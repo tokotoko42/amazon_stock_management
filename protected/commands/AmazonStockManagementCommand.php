@@ -24,6 +24,7 @@ class AmazonStockManagementCommand extends BatchBase
         $this->logutil->init();
 
         $csv_file = Yii::app()->params['csv_file_path'] . '/' . Yii::app()->params['csv_file_name'];
+        $csv_file = preg_replace('/YYYYMMDDHHMMII/', date("YmdHis"), $csv_file);
         $this->fp = fopen($csv_file, "w");
 
         // ヘッダーを定義
