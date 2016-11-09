@@ -83,7 +83,7 @@ class DownloadController extends PCController {
                 sleep(rand(1,9));
 
                 // 次ページのURLを取得
-                $url2 = $this->getUrlNext($this->url, $count);
+                $url2 = $this->getUrlNext($count);
 
                 // Request amazon page
                 $html = $this->requestAmazon($url2);
