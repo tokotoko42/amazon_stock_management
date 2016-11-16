@@ -3,6 +3,7 @@ Yii::import('application.vendors.*');
 mb_language("ja");
 mb_internal_encoding('UTF-8'); 
 require_once 'simple_html_dom.php';
+ini_set('memory_limit', '1024M');
 
 /*
  * Csv Download page
