@@ -3,6 +3,7 @@ Yii::import('application.vendors.*');
 mb_language("ja");
 mb_internal_encoding('UTF-8'); 
 require_once 'simple_html_dom.php';
+ini_set('memory_limit', '1024M');
 
 class AmazonStockManagementCommand extends BatchBase
 {
@@ -128,9 +129,9 @@ class AmazonStockManagementCommand extends BatchBase
             CURLOPT_RETURNTRANSFER => true,
         ));
      
-        $msg = 'アマゾンにリクエストを送信しました。URL = ' . $url;
-        $this->logutil->setLog($this->log_id, 'info', __CLASS__, __FUNCTION__, __LINE__, $msg);
-
+        // Diskサイズに余裕があれば、ログを開放　大量にログがかかれるので注意
+        // $msg = 'アマゾンにリクエストを送信しました。URL = ' . $url;
+        // $this->logutil->setLog($this->log_id, 'info', __CLASS__, __FUNCTION__, __LINE__, $msg);
         return str_get_html($this->exec());
     }
 
