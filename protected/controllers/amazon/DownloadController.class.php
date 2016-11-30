@@ -80,9 +80,6 @@ class DownloadController extends PCController {
         // 次ページを解析する
         if ($page > 1) {
             for ($count = 2; $count <= $page; $count++) {
-                // アマゾンのアクセス制御対策のため、数秒間待機
-                sleep(rand(1,9));
-
                 // 次ページのURLを取得
                 $url2 = $this->getUrlNext($count);
 
