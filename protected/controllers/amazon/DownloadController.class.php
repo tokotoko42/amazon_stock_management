@@ -281,6 +281,9 @@ class DownloadController extends PCController {
         $csvfile = $_GET["csv"];
         $file = "../work2/" . $csvfile;
 
+        # Sort csv file
+        shell_exec("sort -t, -k4r -k1r -u $file -o $file");
+
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename='.basename($file));
