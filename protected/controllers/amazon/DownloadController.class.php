@@ -41,7 +41,7 @@ class DownloadController extends PCController {
         $this->fp = fopen($this->csv_file, "w");
 
         // ヘッダーを定義
-        fwrite($this->fp, "ID,ASIN,ITEM_TYPE.STOCK,ITEM_URL");
+        fwrite($this->fp, 'ID,ASIN,ITEM_TYPE.STOCK,ITEM_URL' . "\n");
     }
 
     /**
