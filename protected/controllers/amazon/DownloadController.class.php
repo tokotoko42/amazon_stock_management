@@ -107,7 +107,7 @@ class DownloadController extends PCController {
     }
     
     private function writeRecord() {
-        $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . $this->item_name . ',' . $this->sold_out . ',' . $this->item_url . "\n";
+        $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . html_entity_decode(urldecode($this->item_name)) . ',' . $this->sold_out . ',' . $this->item_url . "\n";
         fwrite($this->fp, $record);
     }
 
