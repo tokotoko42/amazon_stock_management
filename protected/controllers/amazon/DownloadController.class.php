@@ -41,7 +41,7 @@ class DownloadController extends PCController {
         $this->fp = fopen($this->csv_file, "w");
 
         // ヘッダーを定義
-        fwrite($this->fp, 'ID,ASIN,ITEM_TYPE,ITEM_NAME,STOCK,ITEM_URL' . "\n");
+        //fwrite($this->fp, '"ID","ASIN","ITEM_TYPE","ITEM_NAME","STOCK","ITEM_URL"' . "\n");
     }
 
     /**
@@ -107,7 +107,7 @@ class DownloadController extends PCController {
     }
     
     private function writeRecord() {
-        $record = $this->id . ',' . $this->asin . ',' . $this->item . ',' . html_entity_decode(urldecode($this->item_name)) . ',' . $this->sold_out . ',' . $this->item_url . "\n";
+        $record = '"' . $this->sold_out . '","' . $this->id . '","' . $this->asin . '","' . $this->item . '","' . html_entity_decode(urldecode($this->item_name)) . '","' . $this->item_url . '"' . "\n";
         fwrite($this->fp, $record);
     }
 
@@ -279,22 +279,42 @@ class DownloadController extends PCController {
      */
     public function actionDown() {
         $csvfile = $_GET["csv"];
-        $file = "../work2/" . $csvfile;
+        $file1 = "../work2/" . $csvfile;
+        $file2 = "../work2/csv/header";
+        $file3 = "../work2/csv/amazon_stock_list.csv";
+        $fp2 = fopen($file2, "w");
+        fwrite($fp2, '"ID","ASIN","ITEM_TYPE","ITEM_NAME","STOCK","ITEM_URL"' . "\n");
+        fclose($fp2);
 
         # Sort csv file
-        shell_exec("sort -t, -k5r -k1r -u $file -o $file");
+        shell_exec("sort -t, -k1 -k2r -u $file1 -o $file1");
+
+        $fp3 = fopen($file3, "wb");
+        $this->join_f($fp3, $file2);
+        $this->join_f($fp3, $file1);
+        fclose($fp3);
 
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename='.basename($file));
+        header('Content-Disposition: attachment; filename='.basename($file3));
         header('Content-Transfer-Encoding: binary');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
-        header('Content-Length: ' . filesize($file));
+        header('Content-Length: ' . filesize($file3));
 //        ob_clean();
         flush();
-        readfile ($file);
+        readfile ($file3);
 
     }
+
+    public function join_f($fp_dest, $name)
+    {
+        $fp = fopen($name, "rb");
+        flock($fp, LOCK_EX);
+        while (false !== ($char = fgetc($fp))) fwrite($fp_dest, $char);
+        flock($fp, LOCK_UN);
+        fclose($fp);
+    }
+
 }
